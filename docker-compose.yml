@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  chatbot-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - AI_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-3.5-turbo
+      - DATABASE_URL=sqlite:///./chatbot.db
+      - LOG_LEVEL=INFO
+      - API_DEBUG=False
+    volumes:
+      - ./logs:/app/logs
+      - ./chatbot.db:/app/chatbot.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Optional: Add Ollama service for local model
+  # ollama:
+  #   image: ollama/ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   environment:
+  #     - OLLAMA_HOST=0.0.0.0:11434
+  #   restart: unless-stopped
+
+volumes:
+  # ollama_data:
