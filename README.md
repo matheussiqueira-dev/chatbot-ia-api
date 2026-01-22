@@ -1,6 +1,47 @@
 # Chatbot IA API
 
-API RESTful para chatbot alimentado por inteligencia artificial, com suporte para multiplos provedores (OpenAI, Ollama, Hugging Face) e persistencia de conversas em banco de dados.
+<div align="center">
+
+![Chatbot IA](https://img.shields.io/badge/Chatbot-IA-6366f1?style=for-the-badge&logo=openai&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+**API RESTful para chatbot alimentado por inteligência artificial, com interface moderna e suporte para múltiplos provedores de IA.**
+
+[Demonstração](#demo) • [Instalação](#instalacao) • [Documentação](#endpoints-da-api) • [Contribuir](#licenca)
+
+</div>
+
+---
+
+## 📸 Interface do Sistema
+
+<div align="center">
+
+### Tela Principal - Dark Mode
+![Interface do Chatbot IA](docs/images/screenshot-dark.svg)
+
+### Tela de Conversa
+![Chat em ação](docs/images/screenshot-chat.svg)
+
+</div>
+
+> 🎨 **Design Moderno**: Interface responsiva com suporte a Dark/Light mode, animações suaves e experiência de usuário profissional.
+
+---
+
+## ✨ Características
+
+- 🚀 **API RESTful** completa desenvolvida com FastAPI
+- 🤖 **Múltiplos Provedores de IA**: OpenAI, Ollama (local) e Hugging Face
+- 💾 **Persistência**: Armazenamento de conversas em SQLite ou PostgreSQL
+- 🎨 **Interface Moderna**: Frontend responsivo com tema Dark/Light
+- 📚 **Documentação Automática**: Swagger UI e ReDoc
+- ✅ **Validação Robusta**: Schemas com Pydantic
+- 🔄 **Gerenciamento Completo**: Criar, listar, resetar e deletar conversas
+- 📊 **Monitoramento**: Health check e logging estruturado
+- 🐳 **Docker Ready**: Containerização pronta para deploy
 
 ## Sumario
 
@@ -15,19 +56,6 @@ API RESTful para chatbot alimentado por inteligencia artificial, com suporte par
 - [Testes](#testes)
 - [Deploy com Docker](#deploy-com-docker)
 - [Licenca](#licenca)
-
-## Caracteristicas
-
-- API RESTful completa desenvolvida com FastAPI
-- Suporte para multiplos provedores de IA: OpenAI, Ollama (local) e Hugging Face
-- Armazenamento persistente de conversas em banco de dados SQLite ou PostgreSQL
-- Documentacao automatica com Swagger UI e ReDoc
-- Validacao robusta de dados com Pydantic
-- Gerenciamento completo de conversas (criar, listar, resetar, deletar)
-- Sistema de logging estruturado
-- Suporte a CORS configuravel
-- Health check para monitoramento
-- Containerizacao com Docker
 
 ## Requisitos
 

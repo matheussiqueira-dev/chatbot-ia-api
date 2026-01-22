@@ -3,8 +3,16 @@ import os
 import logging
 from datetime import datetime
 from typing import Optional
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 import uuid
@@ -53,6 +61,9 @@ except Exception as e:
     ai_available = False
     ai_service = None
 
+# Get the frontend directory path
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -62,6 +73,33 @@ async def startup_event():
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {str(e)}")
+
+
+@app.get("/", tags=["Frontend"])
+async def serve_frontend():
+    """Serve the frontend application."""
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    return {"message": "Chatbot IA API", "docs": "/docs", "health": "/health"}
+
+
+@app.get("/styles.css", tags=["Frontend"])
+async def serve_styles():
+    """Serve the CSS file."""
+    css_path = FRONTEND_DIR / "styles.css"
+    if css_path.exists():
+        return FileResponse(css_path, media_type="text/css")
+    raise HTTPException(status_code=404, detail="CSS not found")
+
+
+@app.get("/app.js", tags=["Frontend"])
+async def serve_js():
+    """Serve the JavaScript file."""
+    js_path = FRONTEND_DIR / "app.js"
+    if js_path.exists():
+        return FileResponse(js_path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="JS not found")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
