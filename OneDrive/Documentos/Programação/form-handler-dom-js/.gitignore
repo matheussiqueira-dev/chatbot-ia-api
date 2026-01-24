@@ -1,0 +1,17 @@
+# Dependencies
+react-app/node_modules/
+
+# Build output
+react-app/dist/
+
+# Vite cache
+react-app/.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Form Handler • UI Profissional</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="page__header">
+        <div class="header__top">
+          <p class="eyebrow">Eventos DOM • Validação • UI Premium</p>
+          <button
+            type="button"
+            id="themeToggle"
+            class="theme-toggle"
+            aria-pressed="false"
+          >
+            <span class="theme-toggle__text">Modo escuro</span>
+            <span class="theme-toggle__track" aria-hidden="true">
+              <span class="theme-toggle__thumb"></span>
+            </span>
+          </button>
+        </div>
+        <h1>Gestão de formulário com JavaScript puro</h1>
+        <p>
+          Capture envios, valide campos e apresente resultados em tempo real com um
+          layout digno de portfólio.
+        </p>
+      </header>
+
+      <section class="card" aria-label="Área principal">
+        <div class="card__form">
+          <div class="section-title">
+            <h2>Novo cadastro</h2>
+            <p>Preencha todos os campos para gerar um cartão do usuário.</p>
+          </div>
+
+          <form id="userForm" novalidate>
+            <div class="field">
+              <label for="username">Nome de usuário</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Ex.: Larissa Souza"
+                autocomplete="username"
+                aria-describedby="usernameError"
+                required
+              />
+              <small class="field__message" id="usernameError"></small>
+            </div>
+
+            <div class="field">
+              <label for="password">Senha</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Mínimo de 6 caracteres"
+                autocomplete="new-password"
+                aria-describedby="passwordError"
+                required
+              />
+              <small class="field__message" id="passwordError"></small>
+            </div>
+
+            <div class="field">
+              <label for="phone">Telefone</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="(11) 91234-5678"
+                autocomplete="tel"
+                aria-describedby="phoneError"
+                required
+              />
+              <small class="field__message" id="phoneError"></small>
+            </div>
+
+            <div class="field">
+              <label for="birthdate">Data de nascimento</label>
+              <input
+                type="date"
+                id="birthdate"
+                name="birthdate"
+                aria-describedby="birthdateError"
+                required
+              />
+              <small class="field__message" id="birthdateError"></small>
+            </div>
+
+            <div class="field">
+              <label for="email">E-mail</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="voce@email.com"
+                autocomplete="email"
+                aria-describedby="emailError"
+                required
+              />
+              <small class="field__message" id="emailError"></small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn--primary">Enviar</button>
+              <button type="button" id="clearList" class="btn btn--ghost">
+                Limpar Lista
+              </button>
+            </div>
+
+            <div id="message" class="message" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <div class="card__list">
+          <div class="list-header">
+            <div>
+              <h2>Usuários cadastrados</h2>
+              <p>Dados válidos aparecem aqui imediatamente.</p>
+            </div>
+            <span id="count" class="badge">0</span>
+          </div>
+
+          <ul id="userList" class="list" aria-label="Lista de usuários"></ul>
+          <p id="emptyState" class="empty">Nenhum cadastro ainda.</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
