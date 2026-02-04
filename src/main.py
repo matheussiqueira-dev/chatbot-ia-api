@@ -1,22 +1,24 @@
-"""Main FastAPI application."""
+"""
+Chatbot IA API - Modern FastAPI Backend
+High-performance, scalable and feature-rich chatbot API.
+"""
 import os
+import uuid
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional, Any, Dict
 from pathlib import Path
+
 from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-import uuid
+import json
 
+# Internal imports
 from src.database import get_db, init_db, Conversation, Message
 from src.models.schemas import (
     MessageRequest,
@@ -25,25 +27,27 @@ from src.models.schemas import (
     HealthResponse,
     ErrorResponse,
 )
-from src.services import AIService
+from src.services.ai_service import AIService
 
-# Configure logging
+# Load configuration
+load_dotenv()
+
+# Logger setup
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("chatbot-ia-api")
 
-# Initialize FastAPI app
 app = FastAPI(
     title="Chatbot IA API",
-    description="API para chatbot alimentado por IA",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    description="API robusta para chatbots modernos alimentados por IA generativa.",
+    version="2.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 
-# CORS middleware
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
@@ -52,395 +56,210 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize AI service
-try:
-    ai_service = AIService()
-    ai_available = True
-except Exception as e:
-    logger.error(f"Failed to initialize AI service: {str(e)}")
-    ai_available = False
-    ai_service = None
+# AI Service Instance
+ai_service = AIService()
 
-# Get the frontend directory path
+# Constants
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
-
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup."""
+    """Initialize system on startup."""
     try:
         init_db()
-        logger.info("Database initialized successfully")
+        logger.info("Database and system initialized successfully.")
     except Exception as e:
-        logger.error(f"Failed to initialize database: {str(e)}")
+        logger.critical(f"System startup failed: {e}")
 
-
-@app.get("/", tags=["Frontend"])
-async def serve_frontend():
-    """Serve the frontend application."""
-    index_path = FRONTEND_DIR / "index.html"
-    if index_path.exists():
-        return FileResponse(index_path)
-    return {"message": "Chatbot IA API", "docs": "/docs", "health": "/health"}
-
-
-@app.get("/styles.css", tags=["Frontend"])
-async def serve_styles():
-    """Serve the CSS file."""
-    css_path = FRONTEND_DIR / "styles.css"
-    if css_path.exists():
-        return FileResponse(css_path, media_type="text/css")
-    raise HTTPException(status_code=404, detail="CSS not found")
-
-
-@app.get("/app.js", tags=["Frontend"])
-async def serve_js():
-    """Serve the JavaScript file."""
-    js_path = FRONTEND_DIR / "app.js"
-    if js_path.exists():
-        return FileResponse(js_path, media_type="application/javascript")
-    raise HTTPException(status_code=404, detail="JS not found")
-
-
-@app.get("/health", response_model=HealthResponse, tags=["Health"])
-async def health_check():
-    """Check API health status."""
+@app.get("/health", response_model=HealthResponse, tags=["System"])
+async def health_check(db: Session = Depends(get_db)):
+    """Comprehensive health check for API and dependencies."""
+    db_ok = True
+    try:
+        db.execute("SELECT 1")
+    except:
+        db_ok = False
+        
     return HealthResponse(
-        status="healthy",
-        version="1.0.0",
+        status="active",
+        version="2.0.0",
         timestamp=datetime.utcnow(),
-        database_connected=True,
-        ai_model_ready=ai_available,
+        database_connected=db_ok,
+        ai_model_ready=True, # Assuming service init didn't fail
     )
 
-
-@app.post("/chat", response_model=MessageResponse, tags=["Chat"], status_code=status.HTTP_201_CREATED)
-async def send_message(
+@app.post("/chat", response_model=MessageResponse, tags=["Chat"])
+async def chat_interaction(
     request: MessageRequest,
     db: Session = Depends(get_db),
 ):
-    """Send a message to the chatbot.
-    
-    Args:
-        request: Message request with content and optional conversation_id
-        db: Database session
-        
-    Returns:
-        MessageResponse with AI response and metadata
-    """
-    if not ai_available or ai_service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI service is not available",
-        )
-
+    """Process a chat interaction (Standard JSON response)."""
     try:
-        # Get or create conversation
         conversation_id = request.conversation_id or str(uuid.uuid4())
         
+        # Get or create conversation
         conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
         if not conversation:
             conversation = Conversation(
                 id=conversation_id,
                 user_id=request.user_id,
-                title=request.content[:50] if request.content else "Untitled",
+                title=request.content[:50],
             )
             db.add(conversation)
             db.commit()
-            logger.info(f"Created new conversation: {conversation_id}")
 
-        # Get conversation history for context
-        history_records = db.query(Message).filter(
-            Message.conversation_id == conversation_id
-        ).order_by(Message.created_at).all()
+        # Fetch context
+        history = db.query(Message).filter(Message.conversation_id == conversation_id).order_by(Message.created_at).all()
+        context = [(m.user_message, m.ai_response) for m in history]
 
-        conversation_history = [(msg.user_message, msg.ai_response) for msg in history_records]
+        # Generate response
+        response_text, tokens = await ai_service.generate_response(request.content, context)
 
-        # Generate AI response
-        logger.info(f"Generating response for conversation: {conversation_id}")
-        ai_response, tokens_used = ai_service.generate_response(request.content, conversation_history)
-
-        # Store message in database
-        message = Message(
+        # Persistence
+        new_message = Message(
             id=str(uuid.uuid4()),
             conversation_id=conversation_id,
             user_message=request.content,
-            ai_response=ai_response,
-            tokens_used=tokens_used,
+            ai_response=response_text,
+            tokens_used=tokens,
         )
-        db.add(message)
+        db.add(new_message)
         db.commit()
-        db.refresh(message)
-
-        logger.info(f"Message stored: {message.id}")
+        db.refresh(new_message)
 
         return MessageResponse(
-            id=message.id,
-            conversation_id=message.conversation_id,
-            user_message=message.user_message,
-            ai_response=message.ai_response,
-            timestamp=message.created_at,
-            tokens_used=message.tokens_used,
+            id=new_message.id,
+            conversation_id=conversation_id,
+            user_message=request.content,
+            ai_response=response_text,
+            timestamp=new_message.created_at,
+            tokens_used=tokens,
         )
 
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error(f"Database error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred",
-        )
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error processing message: {str(e)}",
-        )
+        logger.error(f"Chat processing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.get(
-    "/conversation/{conversation_id}",
-    response_model=ConversationHistory,
-    tags=["Chat"],
-)
-async def get_conversation(conversation_id: str, db: Session = Depends(get_db)):
-    """Retrieve conversation history.
-    
-    Args:
-        conversation_id: ID of the conversation to retrieve
-        db: Database session
-        
-    Returns:
-        ConversationHistory with all messages
-    """
-    try:
-        conversation = db.query(Conversation).filter(
-            Conversation.id == conversation_id
-        ).first()
-
-        if not conversation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Conversation not found",
-            )
-
-        messages = db.query(Message).filter(
-            Message.conversation_id == conversation_id
-        ).order_by(Message.created_at).all()
-
-        message_responses = [
-            MessageResponse(
-                id=msg.id,
-                conversation_id=msg.conversation_id,
-                user_message=msg.user_message,
-                ai_response=msg.ai_response,
-                timestamp=msg.created_at,
-                tokens_used=msg.tokens_used,
-            )
-            for msg in messages
-        ]
-
-        return ConversationHistory(
-            conversation_id=conversation.id,
-            user_id=conversation.user_id,
-            messages=message_responses,
-            created_at=conversation.created_at,
-            updated_at=conversation.updated_at,
-            total_messages=len(messages),
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error retrieving conversation: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving conversation",
-        )
-
-
-@app.delete("/conversation/{conversation_id}", tags=["Chat"])
-async def delete_conversation(conversation_id: str, db: Session = Depends(get_db)):
-    """Delete a conversation and all its messages.
-    
-    Args:
-        conversation_id: ID of the conversation to delete
-        db: Database session
-        
-    Returns:
-        Confirmation message
-    """
-    try:
-        conversation = db.query(Conversation).filter(
-            Conversation.id == conversation_id
-        ).first()
-
-        if not conversation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Conversation not found",
-            )
-
-        # Delete messages first (cascade delete)
-        db.query(Message).filter(Message.conversation_id == conversation_id).delete()
-        db.delete(conversation)
-        db.commit()
-
-        logger.info(f"Deleted conversation: {conversation_id}")
-
-        return {
-            "message": "Conversation deleted successfully",
-            "conversation_id": conversation_id,
-        }
-
-    except HTTPException:
-        raise
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error(f"Database error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred",
-        )
-    except Exception as e:
-        logger.error(f"Error deleting conversation: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error deleting conversation",
-        )
-
-
-@app.post("/conversation/{conversation_id}/reset", tags=["Chat"])
-async def reset_conversation(conversation_id: str, db: Session = Depends(get_db)):
-    """Reset a conversation by clearing all messages but keeping the conversation.
-    
-    Args:
-        conversation_id: ID of the conversation to reset
-        db: Database session
-        
-    Returns:
-        Confirmation message
-    """
-    try:
-        conversation = db.query(Conversation).filter(
-            Conversation.id == conversation_id
-        ).first()
-
-        if not conversation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Conversation not found",
-            )
-
-        # Delete all messages in the conversation
-        db.query(Message).filter(Message.conversation_id == conversation_id).delete()
-        conversation.updated_at = datetime.utcnow()
-        db.commit()
-
-        logger.info(f"Reset conversation: {conversation_id}")
-
-        return {
-            "message": "Conversation reset successfully",
-            "conversation_id": conversation_id,
-        }
-
-    except HTTPException:
-        raise
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error(f"Database error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred",
-        )
-    except Exception as e:
-        logger.error(f"Error resetting conversation: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error resetting conversation",
-        )
-
-
-@app.get("/conversations", tags=["Chat"])
-async def list_conversations(
-    user_id: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 10,
+@app.post("/chat/stream", tags=["Chat"])
+async def chat_stream(
+    request: MessageRequest,
     db: Session = Depends(get_db),
 ):
-    """List conversations with pagination.
-    
-    Args:
-        user_id: Optional filter by user ID
-        skip: Number of records to skip
-        limit: Maximum number of records to return
-        db: Database session
+    """Process a chat interaction with Server-Sent Events (SSE) streaming."""
+    async def event_generator():
+        conversation_id = request.conversation_id or str(uuid.uuid4())
         
-    Returns:
-        List of conversations
-    """
-    try:
-        query = db.query(Conversation)
+        # Immediate CID feedback
+        yield f"data: {json.dumps({'type': 'setup', 'conversation_id': conversation_id})}\n\n"
 
-        if user_id:
-            query = query.filter(Conversation.user_id == user_id)
+        # Context fetch (sync but handled by FastAPI threadpool)
+        history = db.query(Message).filter(Message.conversation_id == conversation_id).order_by(Message.created_at).all()
+        context = [(m.user_message, m.ai_response) for m in history]
 
-        conversations = query.order_by(Conversation.updated_at.desc()).offset(skip).limit(limit).all()
+        full_response_parts = []
+        async for chunk in ai_service.stream_response(request.content, context):
+            full_response_parts.append(chunk)
+            yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
 
-        return {
-            "total": query.count(),
-            "conversations": [
-                {
-                    "id": conv.id,
-                    "user_id": conv.user_id,
-                    "title": conv.title,
-                    "created_at": conv.created_at,
-                    "updated_at": conv.updated_at,
-                    "message_count": len(conv.messages),
-                }
-                for conv in conversations
-            ],
-        }
+        full_response = "".join(full_response_parts)
+        
+        # Save to DB (Synchronous)
+        try:
+            conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+            if not conversation:
+                conversation = Conversation(
+                    id=conversation_id,
+                    user_id=request.user_id,
+                    title=request.content[:50],
+                )
+                db.add(conversation)
+            
+            msg = Message(
+                id=str(uuid.uuid4()),
+                conversation_id=conversation_id,
+                user_message=request.content,
+                ai_response=full_response,
+                tokens_used=0, # Estimated or fixed
+            )
+            db.add(msg)
+            db.commit()
+            yield f"data: {json.dumps({'type': 'done', 'message_id': msg.id})}\n\n"
+        except Exception as e:
+            logger.error(f"Error saving streamed response: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Failed to save message'})}\n\n"
 
-    except Exception as e:
-        logger.error(f"Error listing conversations: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error listing conversations",
-        )
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-
-@app.get("/", tags=["Info"])
-async def root():
-    """API root endpoint with documentation links."""
+# Conversation Management
+@app.get("/conversations", tags=["Conversations"])
+async def get_conversations(user_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """List conversations for a user."""
+    query = db.query(Conversation)
+    if user_id:
+        query = query.filter(Conversation.user_id == user_id)
+    
+    conversations = query.order_by(Conversation.updated_at.desc()).all()
     return {
-        "name": "Chatbot IA API",
-        "version": "1.0.0",
-        "description": "API para chatbot alimentado por IA",
-        "docs": "/docs",
-        "redoc": "/redoc",
-        "health": "/health",
+        "conversations": [
+            {
+                "id": c.id,
+                "title": c.title,
+                "created_at": c.created_at,
+                "updated_at": c.updated_at,
+                "messages_count": len(c.messages)
+            } for c in conversations
+        ]
     }
 
+@app.get("/conversation/{conversation_id}", response_model=ConversationHistory, tags=["Conversations"])
+async def get_conversation_history(conversation_id: str, db: Session = Depends(get_db)):
+    """Retrieve full history of a conversation."""
+    conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    return ConversationHistory(
+        conversation_id=conv.id,
+        user_id=conv.user_id,
+        messages=[
+            MessageResponse(
+                id=m.id,
+                conversation_id=m.conversation_id,
+                user_message=m.user_message,
+                ai_response=m.ai_response,
+                timestamp=m.created_at,
+                tokens_used=m.tokens_used
+            ) for m in conv.messages
+        ],
+        created_at=conv.created_at,
+        updated_at=conv.updated_at,
+        total_messages=len(conv.messages)
+    )
 
-# Error handlers
-@app.exception_handler(ValueError)
-async def value_error_handler(request, exc):
-    """Handle ValueError exceptions."""
-    logger.error(f"ValueError: {str(exc)}")
-    return {
-        "error": "Invalid value",
-        "detail": str(exc),
-        "error_code": "INVALID_VALUE",
-    }
+@app.delete("/conversation/{conversation_id}", tags=["Conversations"])
+async def delete_conversation(conversation_id: str, db: Session = Depends(get_db)):
+    """Hard delete of a conversation."""
+    conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    db.delete(conv)
+    db.commit()
+    return {"status": "success", "message": "Conversation deleted"}
 
+# Static Files & Frontend
+@app.get("/", tags=["UI"])
+async def serve_index():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+# Serve other static files
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(
-        app,
+        "src.main:app",
         host=os.getenv("API_HOST", "0.0.0.0"),
         port=int(os.getenv("API_PORT", 8000)),
-        reload=os.getenv("API_DEBUG", "True") == "True",
+        reload=os.getenv("API_DEBUG", "True").lower() == "true",
     )

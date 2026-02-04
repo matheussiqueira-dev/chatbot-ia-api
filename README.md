@@ -1,382 +1,116 @@
-# Chatbot IA API
+# 🤖 Aura AI - Chatbot IA API & Interface Premium
 
-<div align="center">
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Python](https://img.shields.io/badge/python-3.9+-yellow.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-![Chatbot IA](https://img.shields.io/badge/Chatbot-IA-6366f1?style=for-the-badge&logo=openai&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-
-**API RESTful para chatbot alimentado por inteligência artificial, com interface moderna e suporte para múltiplos provedores de IA.**
-
-[Demonstração](#demo) • [Instalação](#instalacao) • [Documentação](#endpoints-da-api) • [Contribuir](#licenca)
-
-</div>
+Aura AI é uma plataforma de chatbot de elite que integra os modelos de linguagem mais avançados do mercado (OpenAI, Anthropic e Google) em uma interface ultra-moderna e fluida. Projetada para performance superior e experiência do usuário excepcional.
 
 ---
 
-## 📸 Interface do Sistema
+## ✨ Funcionalidades em Destaque
 
-<div align="center">
-
-### Tela Principal - Dark Mode
-![Interface do Chatbot IA](docs/images/screenshot-dark.svg)
-
-### Tela de Conversa
-![Chat em ação](docs/images/screenshot-chat.svg)
-
-</div>
-
-> 🎨 **Design Moderno**: Interface responsiva com suporte a Dark/Light mode, animações suaves e experiência de usuário profissional.
+-   **🌊 Respostas em Streaming**: Experiência em tempo real via Server-Sent Events (SSE). Chega de esperar a resposta completa para começar a ler.
+-   **🎨 Design Ultra-Premium**: Interface inspirada em *Glassmorphism* com modo escuro cinematográfico, tipografia moderna e micro-interações fluidas.
+-   **🔌 Multi-Provider Ready**: Suporte nativo para **GPT-4**, **Claude 3** e **Gemini Pro**. Troque de cérebro com uma única variável de ambiente.
+-   **💾 Persistência Inteligente**: Histórico de conversas completo armazenado em SQLite (extensível para PostgreSQL).
+-   **📝 Markdown & Syntax Highlighting**: Visualização impecável de códigos, tabelas e listas complexas.
+-   **📱 Totalmente Responsivo**: Experiência otimizada de desktop a mobile sem perda de funcionalidade.
 
 ---
 
-## ✨ Características
-
-- 🚀 **API RESTful** completa desenvolvida com FastAPI
-- 🤖 **Múltiplos Provedores de IA**: OpenAI, Ollama (local) e Hugging Face
-- 💾 **Persistência**: Armazenamento de conversas em SQLite ou PostgreSQL
-- 🎨 **Interface Moderna**: Frontend responsivo com tema Dark/Light
-- 📚 **Documentação Automática**: Swagger UI e ReDoc
-- ✅ **Validação Robusta**: Schemas com Pydantic
-- 🔄 **Gerenciamento Completo**: Criar, listar, resetar e deletar conversas
-- 📊 **Monitoramento**: Health check e logging estruturado
-- 🐳 **Docker Ready**: Containerização pronta para deploy
-
-## Sumario
-
-- [Caracteristicas](#caracteristicas)
-- [Requisitos](#requisitos)
-- [Instalacao](#instalacao)
-- [Configuracao](#configuracao)
-- [Execucao](#execucao)
-- [Endpoints da API](#endpoints-da-api)
-- [Exemplos de Uso](#exemplos-de-uso)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Testes](#testes)
-- [Deploy com Docker](#deploy-com-docker)
-- [Licenca](#licenca)
-
-## Requisitos
-
-- Python 3.8 ou superior
-- pip ou conda para gerenciamento de pacotes
-- Chave de API (OpenAI ou Hugging Face) ou Ollama instalado localmente
-
-## Instalacao
-
-### 1. Clonar o repositorio
-
-```bash
-git clone https://github.com/matheussiqueira-dev/chatbot-ia-api.git
-cd chatbot-ia-api
-```
-
-### 2. Criar ambiente virtual
-
-Windows:
-```powershell
-python -m venv venv
-venv\Scripts\activate
-```
-
-Linux/macOS:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Instalar dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-## Configuracao
-
-Copie o arquivo de exemplo e configure suas credenciais:
-
-```bash
-cp .env.example .env
-```
-
-### Provedores de IA Disponiveis
-
-#### OpenAI (Recomendado)
-
-```env
-AI_PROVIDER=openai
-OPENAI_API_KEY=sk-sua-chave-aqui
-OPENAI_MODEL=gpt-3.5-turbo
-```
-
-Obtenha sua chave em: https://platform.openai.com/api-keys
-
-#### Ollama (Local)
-
-```env
-AI_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=mistral
-```
-
-Instale o Ollama em https://ollama.ai e execute:
-```bash
-ollama serve
-ollama pull mistral
-```
-
-#### Hugging Face
-
-```env
-AI_PROVIDER=huggingface
-HUGGINGFACE_API_KEY=hf-sua-chave-aqui
-HUGGINGFACE_MODEL=mistralai/Mistral-7B-Instruct-v0.1
-```
-
-### Configuracoes Adicionais
-
-```env
-DATABASE_URL=sqlite:///./chatbot.db
-API_HOST=0.0.0.0
-API_PORT=8000
-API_DEBUG=True
-LOG_LEVEL=INFO
-TEMPERATURE=0.7
-```
-
-## Execucao
-
-### Modo Desenvolvimento
-
-```bash
-python -m uvicorn src.main:app --reload
-```
-
-### Modo Producao
-
-```bash
-python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-A API estara disponivel em `http://localhost:8000`
-
-### Documentacao Interativa
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## Endpoints da API
-
-| Metodo | Endpoint | Descricao |
-|--------|----------|-----------|
-| GET | `/health` | Verificar status da API |
-| POST | `/chat` | Enviar mensagem ao chatbot |
-| GET | `/conversation/{id}` | Obter historico de conversa |
-| GET | `/conversations` | Listar todas as conversas |
-| POST | `/conversation/{id}/reset` | Limpar mensagens de uma conversa |
-| DELETE | `/conversation/{id}` | Deletar conversa |
-
-### Detalhes dos Endpoints
-
-#### POST /chat
-
-Envia uma mensagem para o chatbot.
-
-Requisicao:
-```json
-{
-  "content": "Sua mensagem aqui",
-  "conversation_id": "id-opcional",
-  "user_id": "id-do-usuario"
-}
-```
-
-Resposta:
-```json
-{
-  "id": "msg_123",
-  "conversation_id": "conv_456",
-  "user_message": "Sua mensagem aqui",
-  "ai_response": "Resposta da IA",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "tokens_used": 45
-}
-```
-
-#### GET /conversation/{conversation_id}
-
-Retorna o historico completo de uma conversa.
-
-Resposta:
-```json
-{
-  "conversation_id": "conv_456",
-  "user_id": "user_001",
-  "messages": [...],
-  "created_at": "2024-01-15T10:00:00Z",
-  "updated_at": "2024-01-15T10:30:00Z",
-  "total_messages": 5
-}
-```
-
-#### GET /conversations
-
-Lista conversas com paginacao.
-
-Parametros:
-- `user_id` (opcional): Filtrar por usuario
-- `skip` (padrao: 0): Registros a pular
-- `limit` (padrao: 10): Maximo de registros
-
-## Exemplos de Uso
-
-### Python
-
-```python
-import requests
-
-BASE_URL = "http://localhost:8000"
-
-# Enviar mensagem
-response = requests.post(
-    f"{BASE_URL}/chat",
-    json={
-        "content": "O que e machine learning?",
-        "user_id": "user_001"
-    }
-)
-
-result = response.json()
-print(f"Resposta: {result['ai_response']}")
-
-# Obter historico
-conversation_id = result['conversation_id']
-history = requests.get(f"{BASE_URL}/conversation/{conversation_id}")
-print(history.json())
-```
-
-### cURL
-
-```bash
-# Health check
-curl http://localhost:8000/health
-
-# Enviar mensagem
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Ola, como voce pode me ajudar?"}'
-
-# Listar conversas
-curl "http://localhost:8000/conversations?limit=10"
-```
-
-### JavaScript
-
-```javascript
-const response = await fetch('http://localhost:8000/chat', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    content: 'Como funciona inteligencia artificial?',
-    user_id: 'user_001'
-  })
-});
-
-const data = await response.json();
-console.log(data.ai_response);
-```
-
-## Estrutura do Projeto
-
-```
+## 🛠️ Tecnologias Utilizadas
+
+### Backend (Python/FastAPI)
+-   **FastAPI**: Framework de alta performance para APIs modernas.
+-   **SQLAlchemy**: ORM robusto para gestão de dados.
+-   **OpenAI/Anthropic/Google SDKs**: Integrações oficiais e otimizadas.
+-   **SSE-Starlette**: Streaming robusto para respostas instantâneas.
+
+### Frontend (Vanilla JS/CSS)
+-   **Glassmorphism Engine**: CSS customizado com filtros de desfoque e transparências.
+-   **Marked.js**: Parser de markdown de alta velocidade.
+-   **Highlight.js**: Realce de sintaxe profissional para blocos de código.
+-   **Lucide Icons**: Conjunto de ícones vetoriais modernos.
+
+---
+
+## 🚀 Instalação e Uso
+
+### Pré-requisitos
+-   Python 3.9 ou superior
+-   Uma chave de API (OpenAI, Anthropic ou Google)
+
+### Passo a Passo
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/matheussiqueira-dev/chatbot-ia-api.git
+    cd chatbot-ia-api
+    ```
+
+2.  **Crie e ative um ambiente virtual:**
+    ```bash
+    python -m venv venv
+    ./venv/Scripts/activate # Windows
+    source venv/bin/activate # Linux/Mac
+    ```
+
+3.  **Instale as dependências:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Configure suas chaves:**
+    Copie o arquivo `.env.example` para `.env` e preencha suas chaves:
+    ```bash
+    cp .env.example .env
+    ```
+
+5.  **Inicie o servidor:**
+    ```bash
+    python src/main.py
+    ```
+    Acesse a interface em: `http://localhost:8000`
+
+---
+
+## 📂 Estrutura do Projeto
+
+```text
 chatbot-ia-api/
-├── src/
-│   ├── main.py                 # Aplicacao FastAPI principal
-│   ├── models/
-│   │   └── schemas.py          # Schemas Pydantic
-│   ├── database/
-│   │   ├── config.py           # Configuracao SQLAlchemy
-│   │   └── models.py           # Modelos ORM
-│   └── services/
-│       └── ai_service.py       # Integracao com provedores de IA
-├── tests/
-│   ├── conftest.py
-│   └── test_api.py
-├── docs/
-│   └── API.md
-├── .env.example
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
+├── frontend/               # Interface Aura AI
+│   ├── index.html          # Estrutura principal
+│   ├── styles.css          # Design System Premium
+│   └── app.js              # Lógica de Streaming & UI
+├── src/                    # Backend FastAPI
+│   ├── database/           # Modelos e Conexão DB
+│   ├── services/           # Lógica do AI Provider (OpenAI, Anthropic, Google)
+│   ├── models/             # Schemas Pydantic
+│   └── main.py             # Entrypoint da API
+├── requirements.txt        # Dependências do projeto
+└── .env                    # Configurações sensíveis
 ```
 
-## Testes
+---
 
-Instalar dependencias de desenvolvimento:
+## 📜 Boas Práticas Implementadas
 
-```bash
-pip install -r requirements-dev.txt
-```
+-   **Arquitetura Assíncrona**: Uso extensivo de `async/await` para máxima escalabilidade.
+-   **Separação de Preocupações**: Camadas distintas para API, Negócio (Services) e Dados.
+-   **Segurança**: Proteção via variáveis de ambiente e CORS estruturado.
+-   **UX First**: Feedback visual instantâneo e tratamento de erros amigável.
 
-Executar testes:
+---
 
-```bash
-pytest -v
-```
+## 🔮 Melhorias Futuras
 
-Com cobertura:
+-   [ ] **RAG (Rag-Augmented Generation)**: Upload de PDFs e documentos para análise contextual.
+-   [ ] **Voice-to-Text**: Integração com Whisper para comandos de voz.
+-   [ ] **DALL-E 3 Integration**: Geração de imagens diretamente no chat.
+-   [ ] **User Authentication**: Sistema de login e contas de usuário.
 
-```bash
-pytest --cov=src tests/
-```
+---
 
-## Deploy com Docker
-
-### Build e execucao
-
-```bash
-docker build -t chatbot-ia-api .
-
-docker run -p 8000:8000 \
-  -e OPENAI_API_KEY=sk-sua-chave \
-  -e AI_PROVIDER=openai \
-  chatbot-ia-api
-```
-
-### Com Docker Compose
-
-```bash
-docker-compose up -d
-```
-
-## Seguranca
-
-- Variaveis sensiveis armazenadas em arquivo .env
-- Validacao de entrada com Pydantic
-- Tratamento de erros apropriado
-- Logging de atividades
-- CORS configuravel
-
-## Melhorias Futuras
-
-- Autenticacao com JWT
-- Rate limiting
-- Cache de respostas
-- Analise de sentimentos
-- Suporte multi-idioma
-- Webhooks
-- Streaming de respostas
-
-## Licenca
-
-Este projeto esta licenciado sob a licenca MIT. Consulte o arquivo LICENSE para mais detalhes.
-
-## Autor
-
-Matheus Siqueira - https://github.com/matheussiqueira-dev
-
-## Suporte
-
-Para duvidas ou problemas, abra uma issue no repositorio GitHub.
+Autoria: Matheus Siqueira  
+Website: [matheussiqueira.dev](https://www.matheussiqueira.dev/)
